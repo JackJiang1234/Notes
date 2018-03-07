@@ -8,6 +8,8 @@
 
 ### 异常
 
+### 编码注意事项
+* [关于Java垃圾回收开销降低的几条建议](http://mp.weixin.qq.com/s/Kl_Lk1xecvwZ-vKHMt3MfQ)
 
 ### 反编译
 * [Java开发必会的反编译知识](http://mp.weixin.qq.com/s/pb4XVcVDOIbSdX6o-dBm9A)
