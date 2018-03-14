@@ -4,3 +4,5 @@
 ## 运维
 * [从零起步到Linux运维经理，你必须管好的23个细节](https://mp.weixin.qq.com/s/fkrlB5E_h4nLDsXoOAm9ng)
 
+* [Linux思维导图整理](https://www.jianshu.com/p/59f759207862)
+
