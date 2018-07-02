@@ -38,9 +38,10 @@ active/inactive
 enable/disable
 
 #### 循环变量
-`foreach(var order in Orders) 
+```C#
+foreach(var order in Orders) 
 {
-    //
+    
 }
 foreach(var invoice in Invoices)
 {
@@ -48,8 +49,8 @@ foreach(var invoice in Invoices)
 
 foreach(var wo in workOrders)
 {
-}`
-
+}
+```
 #### bool变量
  一些典型的bool变量名done, error, found, succes or ok， completed, 不推荐在bool变量前加is 如isdone，iserror导致可读性还略差，人们一般习惯正向思维，尽量使用肯定的bool布量名, 反向导致较难阅读理解，如`if not notdone`
 
