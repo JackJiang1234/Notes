@@ -635,5 +635,5 @@ public Client GetResult(Client client)
 [微软设计规范](https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/)  
 <<代码大全>>  
 <<重构改善既有代码的设计>>  
-<<整洁代码之道>>
+<<整洁代码之道>>  
 <<编写高质量代码：改善C#程序的157个建议>>
