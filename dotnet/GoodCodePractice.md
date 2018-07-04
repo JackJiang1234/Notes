@@ -67,7 +67,7 @@ foreach(var wo in workOrders)
 |update         |      更新即有事物               |         ToString        |   
 |load         |      从某个存储区加载如内存，文件               |         LoadConfig        |   
 |fetch         |      从远程获取               |         FetchWorkOrder        |   
-|delete/remove         |      删除                |         DeleteOrder/removeOrder        |   
+|delete/remove         |      删除                |         DeleteOrder/RemoveOrder        |   
 |save         |     存在update,不存在create               |         SaveWorkOrder        |   
 |commit         |       一些操作后提交修改               |         CommitChange        |   
 |apply         |      申请或应该某个规则               |         ApplyStyle        |   
@@ -124,7 +124,7 @@ public void PrintTable()
 ### 避免编写太长的方法，长的方法难以阅读和理解，一个经验值一个方法内的代码不应该超过一电脑屏幕，长的方法应该重新设计和重构
 ```C#
 //bad 
-//以是创建ReactiveWo部分代码
+//以下是创建ReactiveWo部分代码
  public virtual async Task<ReactiveWoEntity> Create(ReactiveWoEntity entity, bool checkNTE = true)
         {
             Util.CheckRequired(entity, "Reactive wo entity");
@@ -215,10 +215,11 @@ public virtual async Task SaveWoAsync()
 
         tran.Complete();
     }
+    //ignore private method implementation
 }
 ```
 ### 消除重复代码，DRY原则(Don't Repeat Yourself)
-####重构重复行为或代码到私有方法,增加说明性的函数，代码也更清晰
+#### 重构重复行为或代码到私有方法,增加说明性的函数，代码也更清晰
 ```C#
 //bad
 public void ExportExcel() 
@@ -254,32 +255,32 @@ private void SetHeader(worksheet, params string[] headers)
     //省略实现
 }
 ```
-#### 使用Action或Function消除简单小逻辑
+#### 方法内使用委托Action或Function消除重复小逻辑
 ```C#
 //bad 
-//字符串转16进制
-private static int ConvertToHex(char ch)
+//字符转为十六进制数字，为演示使用Action重构，没有使用系统字符类自带函数
+private int ConvertToHex()
 {
     int val = 0;
-    if (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'F' || ch >= 'a' && ch <= 'f')
+    char ch = GetNextChar();
+    if (ch == 'x')
     {
-        do
+        ch = GetNextChar();
+        if (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'F' || ch >= 'a' && ch <= 'f')
         {
-            val = val * 16 + ch;
-            if (ch >= '0' && ch <= '9')
+            do
             {
-                val -= '0';
-            }
-            else if (ch >= 'A' && ch <= 'F')
-            {
-                val += 10 - 'A';
-            }
-            else if (ch >= 'a' && ch <= 'f')
-            {
-                val += 10 - 'a';
-            }
-            ch = GetNextChar();
-        } while (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'F' || ch >= 'a' && ch <= 'f');
+                val = val * 16 + ch;
+                if (ch >= '0' && ch <= '9')
+                    val -= '0';
+                else if (ch >= 'A' && ch <= 'F')
+                    val += 10 - 'A';
+                else if (ch >= 'a' && ch <= 'f')
+                    val += 10 - 'a';
+
+                ch = GetNextChar();
+            } while (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'F' || ch >= 'a' && ch <= 'f');
+        }
     }
 
     return val;
@@ -287,30 +288,299 @@ private static int ConvertToHex(char ch)
 ```
 ```C#
 //good 
-private static int ConvertToHex(char ch)
+private int ConvertToHex()
 {
     int val = 0;
-    if (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'F' || ch >= 'a' && ch <= 'f')
+    char ch = GetNextChar();
+    bool IsHexUpper(char testChar) => testChar >= 'A' && testChar <= 'F';
+    bool IsHexLower(char testChar) => testChar >= 'a' && testChar <= 'f';
+    bool IsNum(char testChar) => testChar >= '0' && testChar <= '9';
+    bool IsHexChar(char testChar) => IsHexUpper(testChar) || IsHexLower(testChar) || IsNum(testChar);
+
+    if (ch == 'x')
     {
-        do
+        ch = GetNextChar();
+        if (IsHexChar(ch))
         {
-            val = val * 16 + ch;
-            if (ch >= '0' && ch <= '9')
+            do
             {
-                val -= '0';
-            }
-            else if (ch >= 'A' && ch <= 'F')
-            {
-                val += 10 - 'A';
-            }
-            else if (ch >= 'a' && ch <= 'f')
-            {
-                val += 10 - 'a';
-            }
-            ch = GetNextChar();
-        } while (ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'F' || ch >= 'a' && ch <= 'f');
+                val = val * 16 + ch;
+                if (IsNum(ch))
+                {
+                    val -= '0';
+                }
+                else if (IsHexUpper(ch))
+                {
+                    val += 10 - 'A';
+                }
+                else if (IsHexLower(ch))
+                {
+                    val += 10 - 'a';
+                }
+                ch = GetNextChar();
+            } while (IsHexChar(ch));
+        }
     }
 
     return val;
+}
+```
+
+### 避免方法传入太多的参数, 超过5个参数建议封装成类，如CreateWoContext,CreateWoRequest等
+```C#
+//bad 
+// 创建ReactiveWo入口
+public async Task<ReactiveWoEntity> CreateWo(ReactiveWoEntity entity,
+    IEnumerable<QuestionAnswerEntity> commonQuestionAnswerList = null,
+    IEnumerable<QuestionAnswerEntity> serviceCodeQuestionAnswerList = null,
+    bool isCancelled = false,
+    ReactiveWoContactEntity contact = null,
+    WoReactiveAttributeEntity woAttribute = null,
+    string callId = null, IEnumerable<WOReactiveAvailableTimeEntity> woAvailableTimes = null,
+    bool isRefund = false,
+    bool checkNTE = true,
+    bool isClientPopTips = false)
+
+{
+    //ignore othe code
+}
+```
+```C#
+//good
+public async Task<ReactiveWoEntity> CreateWo(CreateWoRequest request)
+{
+    //ignore othe code
+}
+```
+
+### 简化复杂的表达式
+```C#
+//bad
+//case1
+public void AutoSendRFICheck(int clientId)
+{
+    if (clientId == PredefinedClient.WPH || clientId == PredefinedClient.IH || clientId == PredefinedClient.HPA)
+    {
+        //do some sth
+    }
+}
+
+//case2 
+var isAutoScheduleWoType = entity.WOTypeId == (short)WOType.InHouseTechnician;
+if (entity.Technician != null
+    && isAutoSchedulePriorityId
+    && isAutoScheduleClient
+    && isAutoScheduleWoType
+    && (isAutoScheduleAbFeature || isAutoScheduleRegion)
+    && entity.ScheduleStartTime != null
+    && entity.ScheduleEndTime != null)
+{
+    entity.StatusId = (short)WorkOrderStatus.Scheduled;
+}
+
+```
+
+```C#
+//good
+//case1
+public void AutoSendRFICheck(int clientId)
+{
+    var needSendRefClients = new int[] {  PredefinedClient.WPH,  PredefinedClient.IH }; 
+    if (needSendRefClients.Contains(clientId))
+    {
+        //do some sth
+    }
+}
+
+//case2
+if (entity.HasTechnician
+    && entity.HasScheduleTime
+    && CanAutoSchedule())
+{
+    entity.StatusId = (short)WorkOrderStatus.Scheduled;
+}
+
+private boolean CanAutoSchedule()
+{
+    return isAutoSchedulePriorityId && isAutoScheduleClient 
+        && isAutoScheduleWoType && (isAutoScheduleAbFeature || isAutoScheduleRegion)
+}
+```
+
+### 使用表达式方法成员简化代码
+```C#
+//good
+public override string ToString() => $"{LastName}, {FirstName}";
+
+public string FullName => $"{FirstName} {LastName}";
+```
+
+### 优先使用readonly代替const,const类似C语言的宏替换，当跨程序集引用const属性或常量时,被引用的程序集修改了const常量但引用的程序集未重新编译，引用的程序集仍使用旧的常量值可能导致Bug
+
+###  避免太深的代码嵌套层次
+```C#
+//bad
+private void TryNotToNest(bool hasId)
+{
+    if (hasId)
+    {
+        if (DateTime.Now > DateTime.Now.AddDays(-1))
+        {
+            if (string.Equals(stringA, stringB))
+            {
+                //do sth
+            }
+        }
+    }
+}
+```
+```C#
+//good
+private void TryNotToNest(bool hasId)
+{
+    if (!hasId) 
+    {
+        return;
+    }
+
+    if (DateTime.Now <= DateTime.Now.AddDays(-1))
+    {
+        return;
+    }
+
+    if (string.Equals(stringA, stringB))
+    {
+        //do sth
+    } 
+}
+```
+
+### 最小化返回路径
+```C#
+//bad
+private void CanBuyProduct(Product product)
+{
+    if (product.Price < 15)
+    {
+        return false;
+    }
+    else if (product.IsDeleted)
+    {
+        return false;
+    }
+    else if (!product.OnSale)
+    {
+        return false;
+    }
+    else if ()
+    {
+        //...
+    }
+}
+```
+```C#
+//good
+private void CanBuyProduct(Product product)
+{
+    var valid = true;
+    if (product.Price < 15)
+    {
+        valid = false;
+    }
+    else if (product.IsDeleted)
+    {
+        valid = false;
+    }
+    else if (!product.OnSale)
+    {
+        valid = false;
+    }
+    else if ()
+    {
+        //...
+    }
+
+    return valid
+}
+```
+### 使用元组简化代码,在有些情况可能想方法返回多个值，新建类又觉得繁锁，可考虑元组(需c# 7.0支持)
+```C#
+//good
+
+(int max, int min) = Range(1, 2, 3, 4, 5);
+
+//不关注的返回值可下划线忽略
+ (_, int min2) = Range(1, 2, 3, 4, 5);
+
+private static (int Max, int Min) Range(params int[] numbers)
+{
+    int min = int.MaxValue;
+    int max = int.MinValue;
+    foreach (var n in numbers)
+    {
+        min = (n < min) ? n : min;
+        max = (n > max) ? n : max;
+    }
+    return (max, min);
+}
+
+````
+### 优先内联逻辑
+```C#
+public bool GetResult(int value)
+{
+    if (value == 10)
+    {
+        return true;
+    }
+    else 
+    {
+        return false;
+    }
+}
+
+//good 
+public bool GetResult(int value)
+{
+    return value == 10;
+}
+```
+### 使用?和??简化代码
+```C#
+
+public string GetResult(int value)
+{
+    if (value == 10)
+    {
+        return "value is equals to 10";
+    }
+    else 
+    {
+        return "value is not equals to 10";
+    }
+}
+
+//good
+public string GetResult(int value)
+{
+    return value == 10 ? "value is equals to 10" : "value is not equals to 10";
+}
+
+public Client GetResult(Client client)
+{
+    if (client != null)
+    {
+        return client;
+    }
+    else 
+    {
+        return new Client() { Name = "test" }
+    }
+}
+
+//good
+public Client GetResult(Client client)
+{
+     return client ?? new Client() { Name = "test" }
 }
 ```
