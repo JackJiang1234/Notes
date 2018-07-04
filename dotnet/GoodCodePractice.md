@@ -98,6 +98,9 @@ foreach(var wo in workOrders)
 
 ## 可维护代码
 
+### 一个方法应该只做一件事
+    一件事是基于业务场景下该方法名描述的同一抽象层次，假设有一个创建WorkOrder服务，对外部来说这个服务只完成了创建WorkOrder这个件事，内部实现可以再细分很多步骤，如检查数据合法性，执行逻辑检查，创建前处理，创建处理，创建后处理等，检查数据合法性又可以进一步拆分，如检查Client，检查Location等，在同一抽象层次，我们还是认为每个步骤只做了一件事情
+
 ###  方法内实现应该保持在一致的抽象层次
 
 ```C#
@@ -326,6 +329,41 @@ private int ConvertToHex()
 }
 ```
 
+### 使用表驱动法避免过长的if和switch分支 
+```C#
+
+private static string GetChineseWeek(Week week)
+{
+    switch (week)
+    {
+        case Week.Monday:
+            return "星期一";
+        case Week.Tuesday:
+            return "星期二";
+        case Week.Wednesday:
+            return "星期三";
+        case Week.Thursday:
+            return "星期四";
+        case Week.Friday:
+            return "星期五";
+        case Week.Saturday:
+            return "星期六";
+        case Week.Sunday:
+            return "星期日";
+        default:
+            throw new ArgumentOutOfRangeException("week","星期值超出范围");
+    }
+}
+
+//good
+static string GetChineseWeek(Week week)
+{
+    string[] chineseWeek = { "星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日" };
+    return chineseWeek[(int) week];
+}
+
+```
+
 ### 避免方法传入太多的参数, 超过5个参数建议封装成类，如CreateWoContext,CreateWoRequest等
 ```C#
 //bad 
@@ -416,6 +454,13 @@ public string FullName => $"{FirstName} {LastName}";
 ```
 
 ### 优先使用readonly代替const,const类似C语言的宏替换，当跨程序集引用const属性或常量时,被引用的程序集修改了const常量但引用的程序集未重新编译，引用的程序集仍使用旧的常量值可能导致Bug
+
+```C#
+//good
+public override string ToString() => $"{LastName}, {FirstName}";
+
+public string FullName => $"{FirstName} {LastName}";
+```
 
 ###  避免太深的代码嵌套层次
 ```C#
@@ -584,3 +629,11 @@ public Client GetResult(Client client)
      return client ?? new Client() { Name = "test" }
 }
 ```
+
+## 参考
+[公司代码规范](http://52.80.129.21:8090/display/TD/SMS+ONE+Coding+Standards)  
+[微软设计规范](https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/)  
+<<代码大全>>  
+<<重构改善既有代码的设计>>  
+<<整洁代码之道>>
+<<编写高质量代码：改善C#程序的157个建议>>
