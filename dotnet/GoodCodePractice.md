@@ -64,7 +64,7 @@ foreach(var wo in workOrders)
 |new           |      新建                               |        NewWorkOrder    |
 |from           |       由某物信息来创建         |         CreateWorkdOrderFromCall    |
 |to         |      转换               |         ToString        |   
-|update         |      更新即有事物               |         ToString        |   
+|update         |      更新即有事物               |         UpdateWorkOrder        |   
 |load         |      从某个存储区加载如内存，文件               |         LoadConfig        |   
 |fetch         |      从远程获取               |         FetchWorkOrder        |   
 |delete/remove         |      删除                |         DeleteOrder/RemoveOrder        |   
@@ -128,77 +128,77 @@ public void PrintTable()
 ```C#
 //bad 
 //以下是创建ReactiveWo部分代码
- public virtual async Task<ReactiveWoEntity> Create(ReactiveWoEntity entity, bool checkNTE = true)
+public virtual async Task<ReactiveWoEntity> Create(ReactiveWoEntity entity, bool checkNTE = true)
+{
+    Util.CheckRequired(entity, "Reactive wo entity");
+    Util.CheckRequired(entity.LocationId, "Location id");
+    Util.CheckRequired(entity.ServiceCodeId, "Service code id");
+    ReactiveWoEntity reactiveWo;
+
+    IReactiveWoCheckManager reactiveWoCheckManager = ServiceFactory.Get<IReactiveWoCheckManager>();
+    ICurrentUser currentUser = ServiceFactory.Get<ICurrentUser>();
+    IReactiveWoRepository repository = ServiceFactory.Get<IReactiveWoRepository>();
+    IUserManager userManager = ServiceFactory.Get<IUserManager>();
+
+    var isAutoSchedulePriorityId = false;
+    var isAutoScheduleClient = false;
+    var isAutoScheduleAbFeature = currentUser.AbFeatures.Contains((int)AbFeatures.AutoSchedule);
+    var isAutoScheduleRegion = false;
+    var IsWphandIHClientCAH = true;
+    bool isAutoSchedulPendSchedule = false;
+    using (var transaction = Transaction.BeginWrite())
+    {             
+        var woTagIds = GetWoTagIds(_commonQuestionAnswers, _serviceCodeQuestionAnswers);
+        // it is no use code, because there is no wo id before created wo;
+        //AddWOTag(entity.Id, woTagIds);
+        var locationRepository = ServiceFactory.Get<ILocationRepository>();
+        var location = await locationRepository.Get(entity.LocationId);
+        Util.CheckEntity(location, entity.LocationId);
+        entity.Location = location;
+        entity.IsDispatchApproval = true;
+        var serviceCodeManager = ServiceFactory.Get<IServiceCodeCommonManager>();
+        var serviceCode = await serviceCodeManager.GetServiceCode(entity.ServiceCodeId);
+        Util.CheckEntity(serviceCode, entity.ServiceCodeId);
+
+        var locationBusinessUnitRepository = ServiceFactory.Get<ILocationBusinessUnitRepository>();
+        var locationBu = await locationBusinessUnitRepository.Get(new LocationBusinessUnitQueryModel
         {
-            Util.CheckRequired(entity, "Reactive wo entity");
-            Util.CheckRequired(entity.LocationId, "Location id");
-            Util.CheckRequired(entity.ServiceCodeId, "Service code id");
-            ReactiveWoEntity reactiveWo;
-
-            IReactiveWoCheckManager reactiveWoCheckManager = ServiceFactory.Get<IReactiveWoCheckManager>();
-            ICurrentUser currentUser = ServiceFactory.Get<ICurrentUser>();
-            IReactiveWoRepository repository = ServiceFactory.Get<IReactiveWoRepository>();
-            IUserManager userManager = ServiceFactory.Get<IUserManager>();
-
-            var isAutoSchedulePriorityId = false;
-            var isAutoScheduleClient = false;
-            var isAutoScheduleAbFeature = currentUser.AbFeatures.Contains((int)AbFeatures.AutoSchedule);
-            var isAutoScheduleRegion = false;
-            var IsWphandIHClientCAH = true;
-            bool isAutoSchedulPendSchedule = false;
-            using (var transaction = Transaction.BeginWrite())
-            {             
-                var woTagIds = GetWoTagIds(_commonQuestionAnswers, _serviceCodeQuestionAnswers);
-                // it is no use code, because there is no wo id before created wo;
-                //AddWOTag(entity.Id, woTagIds);
-                var locationRepository = ServiceFactory.Get<ILocationRepository>();
-                var location = await locationRepository.Get(entity.LocationId);
-                Util.CheckEntity(location, entity.LocationId);
-                entity.Location = location;
-                entity.IsDispatchApproval = true;
-                var serviceCodeManager = ServiceFactory.Get<IServiceCodeCommonManager>();
-                var serviceCode = await serviceCodeManager.GetServiceCode(entity.ServiceCodeId);
-                Util.CheckEntity(serviceCode, entity.ServiceCodeId);
-
-                var locationBusinessUnitRepository = ServiceFactory.Get<ILocationBusinessUnitRepository>();
-                var locationBu = await locationBusinessUnitRepository.Get(new LocationBusinessUnitQueryModel
-                {
-                    LocationId = entity.LocationId,
-                    ServiceTypeId = serviceCode.ServiceTypeId
-                });
-                if (_isRefund == false)
-                {
-                    if (!locationBu.Items.Any())
-                    {
-                        throw new VerifyException("Location " + location.SMSNumber + " service type " +
-                                                  serviceCode.ServiceType.Name + " not actived.");
-                    }
-                    var locationManager = ServiceFactory.Get<ILocationBasicManager>();
-                    var activedServiceCodeList = await locationManager.GetActiveServiceCodeList(entity.LocationId, null);
-                    if (activedServiceCodeList.Select(p => p.Id).Count(p => p == entity.ServiceCodeId) <= 0)
-                    {
-                        throw new VerifyException("Service code " + serviceCode.Name + " is inactive.");
-                    }
-                }
-                if (location.Status == 0)
-                {
-                    throw new VerifyException("Location status is inactive, can not create WO. Please activate location in location info.");
-                }
-                isAutoSchedulePriorityId = entity.PriorityId != (short)PredefinePriority.Emergency && entity.PriorityId != (short)PredefinePriority.Critical;
-                isAutoScheduleClient = location.ClientId == ((short)PredefinedClient.WPH).ToString() || location.ClientId == ((short)PredefinedClient.IH).ToString();
-                //set high risk flag
-                var locationAttributeRepository = ServiceFactory.Get<ILocationAttributeRepository>();
-                var locationAttribute = (await locationAttributeRepository.Get(new LocationAttributeQueryModel
-                {
-                    LocationId = location.Id
-                })).Items.FirstOrDefault();
-                if (locationAttribute != null)
-                {
-                    entity.IsHighRisk = locationAttribute.IsHighRisk.GetValueOrDefault();
-                }
-             //省略大量代码
-            return reactiveWo;
+            LocationId = entity.LocationId,
+            ServiceTypeId = serviceCode.ServiceTypeId
+        });
+        if (_isRefund == false)
+        {
+            if (!locationBu.Items.Any())
+            {
+                throw new VerifyException("Location " + location.SMSNumber + " service type " +
+                                            serviceCode.ServiceType.Name + " not actived.");
+            }
+            var locationManager = ServiceFactory.Get<ILocationBasicManager>();
+            var activedServiceCodeList = await locationManager.GetActiveServiceCodeList(entity.LocationId, null);
+            if (activedServiceCodeList.Select(p => p.Id).Count(p => p == entity.ServiceCodeId) <= 0)
+            {
+                throw new VerifyException("Service code " + serviceCode.Name + " is inactive.");
+            }
         }
+        if (location.Status == 0)
+        {
+            throw new VerifyException("Location status is inactive, can not create WO. Please activate location in location info.");
+        }
+        isAutoSchedulePriorityId = entity.PriorityId != (short)PredefinePriority.Emergency && entity.PriorityId != (short)PredefinePriority.Critical;
+        isAutoScheduleClient = location.ClientId == ((short)PredefinedClient.WPH).ToString() || location.ClientId == ((short)PredefinedClient.IH).ToString();
+        //set high risk flag
+        var locationAttributeRepository = ServiceFactory.Get<ILocationAttributeRepository>();
+        var locationAttribute = (await locationAttributeRepository.Get(new LocationAttributeQueryModel
+        {
+            LocationId = location.Id
+        })).Items.FirstOrDefault();
+        if (locationAttribute != null)
+        {
+            entity.IsHighRisk = locationAttribute.IsHighRisk.GetValueOrDefault();
+        }
+        //省略大量代码
+    return reactiveWo;
+}
 ```
 ```C#
 //good 
@@ -455,12 +455,7 @@ public string FullName => $"{FirstName} {LastName}";
 
 ### 优先使用readonly代替const,const类似C语言的宏替换，当跨程序集引用const属性或常量时,被引用的程序集修改了const常量但引用的程序集未重新编译，引用的程序集仍使用旧的常量值可能导致Bug
 
-```C#
-//good
-public override string ToString() => $"{LastName}, {FirstName}";
 
-public string FullName => $"{FirstName} {LastName}";
-```
 
 ###  避免太深的代码嵌套层次
 ```C#
