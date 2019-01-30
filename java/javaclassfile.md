@@ -54,4 +54,7 @@ class 文件没有做什么优化，只是忠实把java类的信息记录下来�
 
 ​	[jvmgo](https://github.com/zxh0/jvm.go)
 
-​	
+​	[opcode](http://homepages.inf.ed.ac.uk/kwxm/JVM/codeByNm.html#codes_A)
+
+​	[Java Programming/Byte Code](https://en.wikibooks.org/wiki/Java_Programming/Byte_Code)
+
