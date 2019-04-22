@@ -8,11 +8,15 @@
 
 [skywalking](http://skywalking.apache.org/)
 
-### API管理
+### API
 
 [Rap](http://rapapi.org/org/index.do)  
 
 [API Matic](https://www.apimatic.io/)
+
+[Swagger Hub](<https://swagger.io/tools/swaggerhub/>)
+
+[OpenAPI规范](<https://swagger.io/specification/#securityFiltering>)
 
 ### 版本管理
 
