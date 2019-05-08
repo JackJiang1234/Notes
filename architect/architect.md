@@ -58,3 +58,4 @@
 
 [阿里巴巴程序员常用的 15 款开发者工具](<https://www.infoq.cn/article/1jV*BDxGwld6CWDVIt48>)
 
+[数据同步中间件canal](<https://github.com/alibaba/canal>)
