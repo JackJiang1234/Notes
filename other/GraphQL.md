@@ -12,9 +12,17 @@ GraphQL这个名字，Graph + Query Language，就表明了它的设计初衷是
 
 词法，语法， 数据描述语言
 
+#### 查询
+
+指定查询字段
+
+指定查询参数
+
 ### 应用场景
 
 ### 优点与缺点
+
+查询与返回结果差不多一样结构
 
 然而GraphQL的Application则可能只需要一两个，这相当于把复杂性和heavy lifting交给了server端和cache层，而不是资源有限，并且speed-sensitive的client端。
 
@@ -28,3 +36,4 @@ GraphQL这个名字，Graph + Query Language，就表明了它的设计初衷是
 
 [GraphCN](<http://graphql.cn/learn/>)
 
+[GraphQL 在微服务架构中的实践](https://draveness.me/graphql-microservice)
