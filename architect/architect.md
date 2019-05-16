@@ -38,6 +38,10 @@
 
 [Sentinel](https://github.com/alibaba/Sentinel/wiki/%E4%BB%8B%E7%BB%8D)
 
+### 测试
+
+[RDebug](https://github.com/didi/rdebug/blob/master/README_zh_CN.md)
+
 ### 版本管理
 
 [Git-TFS](https://github.com/git-tfs/git-tfs)
