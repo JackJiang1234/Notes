@@ -37,3 +37,7 @@ GraphQL这个名字，Graph + Query Language，就表明了它的设计初衷是
 [GraphCN](<http://graphql.cn/learn/>)
 
 [GraphQL 在微服务架构中的实践](https://draveness.me/graphql-microservice)
+
+[GraphiQL Demo](https://graphql.github.io/swapi-graphql/)
+
+[ASP.NET Core&GraphQL视频](https://www.bilibili.com/video/av33252179/)
